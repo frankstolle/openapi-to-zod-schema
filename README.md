@@ -16,11 +16,11 @@ You can install the package from [NPM](https://www.npmjs.com/openapi-to-zod-sche
 
 ```bash
 # install
-pnpm add openapi-to-zod-schema
+npm i -D openapi-to-zod-schema
 
 # or run it directly
-pnpx openapi-to-zod-schema https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml
-pnpx openapi-to-zod-schema .openapi.yaml -o openai-schemas.ts
+npx openapi-to-zod-schema https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml
+npx openapi-to-zod-schema .openapi.yaml -o openai-schemas.ts
 ```
 
 ## Usage
