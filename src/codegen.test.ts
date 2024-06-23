@@ -33,17 +33,17 @@ describe("codegen", () => {
       "import { z } from 'zod';
 
       export const UserSchema = z.object({
-        ['id']: z.number(),
-        ['name']: z.string().optional(),
-        ['email']: z.string(),
-        ['roles']: z.array(z.string()).optional()
+        id: z.number(),
+        name: z.string().optional(),
+        email: z.string(),
+        roles: z.array(z.string()).optional()
       });
 
       export const PostSchema = z.object({
-        ['id']: z.number(),
-        ['title']: z.string(),
-        ['content']: z.string(),
-        ['author']: UserSchema
+        id: z.number(),
+        title: z.string(),
+        content: z.string(),
+        author: UserSchema
       });"
     `);
   });
@@ -59,7 +59,7 @@ describe("codegen", () => {
                 type: "object",
                 nullable: true,
                 properties: {
-                  deepProp: { type: "string" },
+                  "deep-Prop": { type: "string" },
                 },
               },
             },
@@ -73,8 +73,8 @@ describe("codegen", () => {
       "import { z } from 'zod';
 
       export const SampleSchema = z.object({
-        ['nested']: z.object({
-          ['deepProp']: z.string().optional()
+        nested: z.object({
+          "deep-Prop": z.string().optional()
         }).nullable()
       });"
     `);

@@ -11,6 +11,13 @@ const indent = (code: string, level = 1) => {
     .join("\n");
 };
 
+const formatObjectKey = (key: string) => {
+  if (/^[$A-Z_a-z][\w$]*$/.test(key)) {
+    return key;
+  }
+  return `"${key}"`;
+};
+
 class ZodSchemaCodeGenerator {
   private schemas: Record<string, z.ZodTypeAny>;
   private generatedSchemas: Set<string>;
@@ -35,7 +42,10 @@ class ZodSchemaCodeGenerator {
     if (schema instanceof z.ZodObject) {
       const shape = schema.shape;
       const properties = Object.entries(shape)
-        .map(([key, value]) => `['${key}']: ${this.generateSchemaCode(value as z.ZodTypeAny, `${schemaName}.${key}`)}`)
+        .map(
+          ([key, value]) =>
+            `${formatObjectKey(key)}: ${this.generateSchemaCode(value as z.ZodTypeAny, `${schemaName}.${key}`)}`
+        )
         .join(",\n");
       return `z.object({\n${indent(properties)}\n})`;
     } else if (schema instanceof z.ZodArray) {
