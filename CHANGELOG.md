@@ -1,3 +1,9 @@
+# [1.2.0](https://github.com/3rd/openapi-to-zod-schema/compare/v1.1.0...v1.2.0) (2024-06-23)
+
+### Features
+
+- add CLI and docs ([b9941fc](https://github.com/3rd/openapi-to-zod-schema/commit/b9941fcc2d41d4c41c6ec58548147254e82f55c2))
+
 # [1.1.0](https://github.com/3rd/openapi-to-zod-schema/compare/v1.0.0...v1.1.0) (2024-06-23)
 
 ### Features
