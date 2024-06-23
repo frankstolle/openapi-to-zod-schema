@@ -1,6 +1,6 @@
 import * as esbuild from "esbuild";
 
-const shared = {
+const libShared = {
   entryPoints: ["src/index.ts"],
   target: "es2016",
   bundle: true,
@@ -9,14 +9,23 @@ const shared = {
   platform: "neutral",
   external: ["zod"],
 };
-
 await esbuild.build({
-  ...shared,
+  ...libShared,
   outfile: "dist/index.mjs",
 });
-
 await esbuild.build({
-  ...shared,
+  ...libShared,
   outfile: "dist/index.cjs",
+  format: "cjs",
+});
+
+const cliShared = {
+  ...libShared,
+  entryPoints: ["src/cli.ts"],
+  platform: "node",
+};
+await esbuild.build({
+  ...cliShared,
+  outfile: "dist/cli.cjs",
   format: "cjs",
 });

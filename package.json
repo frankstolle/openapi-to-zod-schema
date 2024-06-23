@@ -13,6 +13,9 @@
   "type": "module",
   "types": "dist/index.d.ts",
   "main": "dist/index.mjs",
+  "bin": {
+    "openapi-to-zod-schema": "./dist/cli.cjs"
+  },
   "exports": {
     ".": {
       "import": {
@@ -66,5 +69,8 @@
   },
   "peerDependencies": {
     "zod": "^3.21.4"
+  },
+  "dependencies": {
+    "yaml": "^2.4.5"
   }
 }
