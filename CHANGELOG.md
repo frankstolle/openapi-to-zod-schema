@@ -1,3 +1,9 @@
+# [1.1.0](https://github.com/3rd/openapi-to-zod-schema/compare/v1.0.0...v1.1.0) (2024-06-23)
+
+### Features
+
+- add prettier object key formatting ([8fd99d8](https://github.com/3rd/openapi-to-zod-schema/commit/8fd99d89ff6b291cefd096f163b8c8ee164dcda2))
+
 # 1.0.0 (2024-06-23)
 
 ### Features
