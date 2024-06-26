@@ -35,6 +35,7 @@ async function main() {
   const args = process.argv.slice(2);
   const inputFile = args[0];
   const outputFile = args.includes("-o") ? args[args.indexOf("-o") + 1] : null;
+  const prefix = args.includes("--prefix") ? args[args.indexOf("--prefix") + 1] : "";
 
   if (!inputFile) {
     console.error("Please provide an input file or URL.");
@@ -43,7 +44,7 @@ async function main() {
 
   try {
     const spec = await readSpec(inputFile);
-    const code = codegen(spec as OpenAPISpec);
+    const code = codegen(spec as OpenAPISpec, prefix);
 
     if (outputFile) {
       fs.writeFileSync(outputFile, code);

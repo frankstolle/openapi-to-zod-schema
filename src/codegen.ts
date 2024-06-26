@@ -1,5 +1,5 @@
-/* eslint-disable sonarjs/no-nested-template-literals */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable sonarjs/no-nested-template-literals */
 import { z } from "zod";
 import { OpenAPISpec, OpenAPIToZodConverter } from "./converter";
 
@@ -22,11 +22,13 @@ class ZodSchemaCodeGenerator {
   private schemas: Record<string, z.ZodTypeAny>;
   private generatedSchemas: Set<string>;
   private currentlyGenerating: Set<string>;
+  private prefix: string;
 
-  constructor(schemas: Record<string, z.ZodTypeAny>) {
+  constructor(schemas: Record<string, z.ZodTypeAny>, prefix = "") {
     this.schemas = schemas;
     this.generatedSchemas = new Set();
     this.currentlyGenerating = new Set();
+    this.prefix = prefix;
   }
 
   private generateSchemaCode(schema: z.ZodTypeAny, schemaName: string): string {
@@ -36,7 +38,7 @@ class ZodSchemaCodeGenerator {
       this.generatedSchemas.has(referencedSchemaName) &&
       !this.currentlyGenerating.has(referencedSchemaName)
     ) {
-      return `${referencedSchemaName}Schema`;
+      return `${this.prefix}${referencedSchemaName}Schema`;
     }
 
     if (schema instanceof z.ZodObject) {
@@ -101,7 +103,7 @@ class ZodSchemaCodeGenerator {
         const schemaCode = this.generateSchemaCode(schema, name);
         this.currentlyGenerating.delete(name);
         this.generatedSchemas.add(name);
-        return `export const ${name}Schema = ${schemaCode};`;
+        return `export const ${this.prefix}${name}Schema = ${schemaCode};`;
       })
       .filter(Boolean)
       .join("\n\n");
@@ -109,9 +111,9 @@ class ZodSchemaCodeGenerator {
   }
 }
 
-export const codegen = (spec: OpenAPISpec) => {
+export const codegen = (spec: OpenAPISpec, prefix = "") => {
   const converter = new OpenAPIToZodConverter(spec);
   const zodSchemas = converter.convert();
-  const codeGenerator = new ZodSchemaCodeGenerator(zodSchemas);
+  const codeGenerator = new ZodSchemaCodeGenerator(zodSchemas, prefix);
   return codeGenerator.generateCode();
 };
