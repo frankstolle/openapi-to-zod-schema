@@ -1,3 +1,9 @@
+# [1.3.0](https://github.com/3rd/openapi-to-zod-schema/compare/v1.2.0...v1.3.0) (2024-06-26)
+
+### Features
+
+- add support for name prefix ([b308d4f](https://github.com/3rd/openapi-to-zod-schema/commit/b308d4f43fba1cb2a8558a978b263be374c03897))
+
 # [1.2.0](https://github.com/3rd/openapi-to-zod-schema/compare/v1.1.0...v1.2.0) (2024-06-23)
 
 ### Features
