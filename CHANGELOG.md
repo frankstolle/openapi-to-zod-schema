@@ -1,3 +1,9 @@
+## [1.3.1](https://github.com/3rd/openapi-to-zod-schema/compare/v1.3.0...v1.3.1) (2025-08-23)
+
+### Bug Fixes
+
+- **converter:** handle circular references and undefined schemas ([93e85d1](https://github.com/3rd/openapi-to-zod-schema/commit/93e85d17d3875edcb1963bc1e5bd9f314e910b1f)), closes [#1](https://github.com/3rd/openapi-to-zod-schema/issues/1)
+
 # [1.3.0](https://github.com/3rd/openapi-to-zod-schema/compare/v1.2.0...v1.3.0) (2024-06-26)
 
 ### Features
