@@ -19,7 +19,7 @@ You can install the package from [NPM](https://www.npmjs.com/openapi-to-zod-sche
 npm i -D openapi-to-zod-schema
 
 # or run it directly
-npx openapi-to-zod-schema https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml
+npx openapi-to-zod-schema https://raw.githubusercontent.com/openai/openai-openapi/refs/heads/manual_spec/openapi.yaml
 npx openapi-to-zod-schema .openapi.yaml -o openai-schemas.ts
 ```
 
