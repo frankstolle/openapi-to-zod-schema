@@ -10,13 +10,13 @@ interface OpenAPISchemaBase {
 
 interface OpenAPISchemaObject extends OpenAPISchemaBase {
   type: "object";
-  properties?: Record<string, OpenAPISchema>;
+  properties?: Record<string, OpenAPISchema | undefined>;
   required?: string[];
 }
 
 interface OpenAPISchemaArray extends OpenAPISchemaBase {
   type: "array";
-  items: OpenAPISchema;
+  items?: OpenAPISchema | undefined;
 }
 
 interface OpenAPISchemaAllOf {
@@ -46,7 +46,7 @@ type OpenAPISchema =
 
 interface OpenAPISpec {
   components: {
-    schemas: Record<string, OpenAPISchema>;
+    schemas: Record<string, OpenAPISchema | undefined>;
   };
 }
 
@@ -120,6 +120,10 @@ class OpenAPIToZodConverter {
     const schemaName = ref.split("/").pop() as string;
     if (!this.zodSchemas[schemaName]) {
       const refSchema = this.spec.components.schemas[schemaName];
+      if (!refSchema) {
+        console.warn(`Warning: Referenced schema "${schemaName}" not found in spec`);
+        return z.unknown();
+      }
       this.zodSchemas[schemaName] = z.lazy(() => this.convertSchema(refSchema));
     }
     return this.zodSchemas[schemaName];
@@ -130,8 +134,10 @@ class OpenAPIToZodConverter {
     const requiredFields = new Set(schema.required ?? []);
 
     for (const [key, value] of Object.entries(schema.properties ?? {})) {
-      const fieldSchema = this.convertSchema(value);
-      shape[key] = requiredFields.has(key) ? fieldSchema : fieldSchema.optional();
+      if (value) {
+        const fieldSchema = this.convertSchema(value);
+        shape[key] = requiredFields.has(key) ? fieldSchema : fieldSchema.optional();
+      }
     }
 
     const objectSchema = z.object(shape);
@@ -139,7 +145,7 @@ class OpenAPIToZodConverter {
   }
 
   private convertArraySchema(schema: OpenAPISchemaArray): z.ZodTypeAny {
-    const itemSchema = this.convertSchema(schema.items);
+    const itemSchema = schema.items ? this.convertSchema(schema.items) : z.unknown();
     const arraySchema = z.array(itemSchema);
     return schema.nullable ? arraySchema.nullable() : arraySchema;
   }
@@ -166,10 +172,9 @@ class OpenAPIToZodConverter {
 
   public convert(): Record<string, z.ZodTypeAny> {
     for (const [name, schema] of Object.entries(this.spec.components.schemas)) {
-      this.zodSchemas[name] = z.lazy(() => this.convertSchema(schema));
-    }
-    for (const [name, schema] of Object.entries(this.spec.components.schemas)) {
-      this.zodSchemas[name] = this.convertSchema(schema);
+      if (schema) {
+        this.zodSchemas[name] = z.lazy(() => this.convertSchema(schema));
+      }
     }
     return this.zodSchemas;
   }

@@ -1,6 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { z } from "zod";
-import { OpenAPISpec, convertOpenAPISpecToZodSchemas } from "./converter";
+import { convertOpenAPISpecToZodSchemas, OpenAPISpec } from "./converter";
+
+const unwrapLazy = <T extends z.ZodTypeAny>(schema: z.ZodLazy<T>): T => {
+  const lazySchema = schema as unknown as { _def: { getter: () => T } };
+  return lazySchema._def.getter();
+};
 
 describe("OpenAPI to Zod Converter", () => {
   it("converts basic types correctly", () => {
@@ -23,15 +27,20 @@ describe("OpenAPI to Zod Converter", () => {
     };
 
     const zodSchemas = convertOpenAPISpecToZodSchemas(spec);
-    const BasicTypesSchema = zodSchemas.map.BasicTypes as z.ZodObject<any>;
+    const BasicTypesSchemaLazy = zodSchemas.map.BasicTypes as z.ZodLazy<z.ZodObject<z.ZodRawShape>>;
+    const BasicTypesSchema = unwrapLazy(BasicTypesSchemaLazy);
 
+    // test that the schema is wrapped in lazy
+    expect(BasicTypesSchemaLazy).toBeInstanceOf(z.ZodLazy);
+
+    // test schema structure
     expect(BasicTypesSchema.shape.stringProp).toBeInstanceOf(z.ZodString);
     expect(BasicTypesSchema.shape.numberProp).toBeInstanceOf(z.ZodNumber);
     expect(BasicTypesSchema.shape.integerProp).toBeInstanceOf(z.ZodNumber);
     expect(BasicTypesSchema.shape.booleanProp).toBeInstanceOf(z.ZodBoolean);
     expect(BasicTypesSchema.shape.arrayProp).toBeInstanceOf(z.ZodArray);
 
-    const parsed = BasicTypesSchema.safeParse({
+    const parsed = BasicTypesSchemaLazy.safeParse({
       stringProp: "test",
       numberProp: 123,
       integerProp: 456,
@@ -65,11 +74,13 @@ describe("OpenAPI to Zod Converter", () => {
     };
 
     const zodSchemas = convertOpenAPISpecToZodSchemas(spec);
-    const MainTypeSchema = zodSchemas.map.MainType as z.ZodObject<any>;
+    const MainTypeSchemaLazy = zodSchemas.map.MainType as z.ZodLazy<z.ZodObject<z.ZodRawShape>>;
+    const MainTypeSchema = unwrapLazy(MainTypeSchemaLazy);
 
-    expect(MainTypeSchema.shape.refProp).toBeInstanceOf(z.ZodObject);
+    expect(MainTypeSchemaLazy).toBeInstanceOf(z.ZodLazy);
+    expect(MainTypeSchema.shape.refProp).toBeInstanceOf(z.ZodLazy);
 
-    const parsed = MainTypeSchema.safeParse({
+    const parsed = MainTypeSchemaLazy.safeParse({
       refProp: { prop: "test" },
     });
 
@@ -91,19 +102,21 @@ describe("OpenAPI to Zod Converter", () => {
     };
 
     const zodSchemas = convertOpenAPISpecToZodSchemas(spec);
-    const AllOfTypeSchema = zodSchemas.map.AllOfType as z.ZodObject<any>;
+    const AllOfTypeSchemaLazy = zodSchemas.map.AllOfType as z.ZodLazy<z.ZodObject<z.ZodRawShape>>;
+    const AllOfTypeSchema = unwrapLazy(AllOfTypeSchemaLazy);
 
+    expect(AllOfTypeSchemaLazy).toBeInstanceOf(z.ZodLazy);
     expect(AllOfTypeSchema.shape.prop1).toBeInstanceOf(z.ZodString);
     expect(AllOfTypeSchema.shape.prop2).toBeInstanceOf(z.ZodNumber);
 
-    const parsed = AllOfTypeSchema.safeParse({
+    const parsed = AllOfTypeSchemaLazy.safeParse({
       prop1: "test",
       prop2: 123,
     });
 
     expect(parsed.success).toBe(true);
 
-    const invalidParsed = AllOfTypeSchema.safeParse({
+    const invalidParsed = AllOfTypeSchemaLazy.safeParse({
       prop2: 123,
     });
 
@@ -125,10 +138,14 @@ describe("OpenAPI to Zod Converter", () => {
     };
 
     const zodSchemas = convertOpenAPISpecToZodSchemas(spec);
-    const OneOfTypeSchema = zodSchemas.map.OneOfType as z.ZodUnion<any>;
+    const OneOfTypeSchemaLazy = zodSchemas.map.OneOfType as z.ZodLazy<z.ZodUnion<[z.ZodTypeAny, z.ZodTypeAny]>>;
+    const OneOfTypeSchema = unwrapLazy(OneOfTypeSchemaLazy);
 
-    const parsedString = OneOfTypeSchema.safeParse({ prop: "test" });
-    const parsedNumber = OneOfTypeSchema.safeParse({ prop: 123 });
+    expect(OneOfTypeSchemaLazy).toBeInstanceOf(z.ZodLazy);
+    expect(OneOfTypeSchema).toBeInstanceOf(z.ZodUnion);
+
+    const parsedString = OneOfTypeSchemaLazy.safeParse({ prop: "test" });
+    const parsedNumber = OneOfTypeSchemaLazy.safeParse({ prop: 123 });
 
     expect(parsedString.success).toBe(true);
     expect(parsedNumber.success).toBe(true);
@@ -149,11 +166,15 @@ describe("OpenAPI to Zod Converter", () => {
     };
 
     const zodSchemas = convertOpenAPISpecToZodSchemas(spec);
-    const AnyOfTypeSchema = zodSchemas.map.AnyOfType as z.ZodUnion<any>;
+    const AnyOfTypeSchemaLazy = zodSchemas.map.AnyOfType as z.ZodLazy<z.ZodUnion<[z.ZodTypeAny, z.ZodTypeAny]>>;
+    const AnyOfTypeSchema = unwrapLazy(AnyOfTypeSchemaLazy);
 
-    const parsed1 = AnyOfTypeSchema.safeParse({ prop1: "test" });
-    const parsed2 = AnyOfTypeSchema.safeParse({ prop2: 123 });
-    const parsedBoth = AnyOfTypeSchema.safeParse({ prop1: "test", prop2: 123 });
+    expect(AnyOfTypeSchemaLazy).toBeInstanceOf(z.ZodLazy);
+    expect(AnyOfTypeSchema).toBeInstanceOf(z.ZodUnion);
+
+    const parsed1 = AnyOfTypeSchemaLazy.safeParse({ prop1: "test" });
+    const parsed2 = AnyOfTypeSchemaLazy.safeParse({ prop2: 123 });
+    const parsedBoth = AnyOfTypeSchemaLazy.safeParse({ prop1: "test", prop2: 123 });
 
     expect(parsed1.success).toBe(true);
     expect(parsed2.success).toBe(true);
@@ -182,12 +203,14 @@ describe("OpenAPI to Zod Converter", () => {
     };
 
     const zodSchemas = convertOpenAPISpecToZodSchemas(spec);
-    const NestedTypeSchema = zodSchemas.map.NestedType as z.ZodObject<any>;
+    const NestedTypeSchemaLazy = zodSchemas.map.NestedType as z.ZodLazy<z.ZodObject<z.ZodRawShape>>;
+    const NestedTypeSchema = unwrapLazy(NestedTypeSchemaLazy);
 
+    expect(NestedTypeSchemaLazy).toBeInstanceOf(z.ZodLazy);
     expect(NestedTypeSchema.shape.nested).toBeInstanceOf(z.ZodObject);
-    expect((NestedTypeSchema.shape.nested as z.ZodObject<any>).shape.deepProp).toBeInstanceOf(z.ZodString);
+    expect((NestedTypeSchema.shape.nested as z.ZodObject<z.ZodRawShape>).shape.deepProp).toBeInstanceOf(z.ZodString);
 
-    const parsed = NestedTypeSchema.safeParse({
+    const parsed = NestedTypeSchemaLazy.safeParse({
       nested: { deepProp: "test" },
     });
 
@@ -218,14 +241,123 @@ describe("OpenAPI to Zod Converter", () => {
     };
 
     const zodSchemas = convertOpenAPISpecToZodSchemas(spec);
-    const ArrayTypeSchema = zodSchemas.map.ArrayType as z.ZodObject<any>;
+    const ArrayTypeSchemaLazy = zodSchemas.map.ArrayType as z.ZodLazy<z.ZodObject<z.ZodRawShape>>;
+    const ArrayTypeSchema = unwrapLazy(ArrayTypeSchemaLazy);
 
+    expect(ArrayTypeSchemaLazy).toBeInstanceOf(z.ZodLazy);
     expect(ArrayTypeSchema.shape.arrayProp).toBeInstanceOf(z.ZodArray);
 
-    const parsed = ArrayTypeSchema.safeParse({
+    const parsed = ArrayTypeSchemaLazy.safeParse({
       arrayProp: [{ itemProp: "test1" }, { itemProp: "test2" }],
     });
 
     expect(parsed.success).toBe(true);
+  });
+
+  it("handles circular references correctly", () => {
+    const spec: OpenAPISpec = {
+      components: {
+        schemas: {
+          Unit: {
+            type: "object",
+            properties: {
+              uid: { type: "string" },
+              parentUnit: { $ref: "#/components/schemas/Unit" },
+            },
+            required: ["uid"],
+          },
+        },
+      },
+    };
+
+    const zodSchemas = convertOpenAPISpecToZodSchemas(spec);
+    const UnitSchema = zodSchemas.map.Unit;
+
+    const validUnit = {
+      uid: "unit-1",
+      parentUnit: {
+        uid: "unit-2",
+        parentUnit: {
+          uid: "unit-3",
+        },
+      },
+    };
+
+    const parsed = UnitSchema.safeParse(validUnit);
+    expect(parsed.success).toBe(true);
+
+    const invalidUnit = {
+      uid: "unit-1",
+      parentUnit: {
+        parentUnit: {
+          uid: "unit-3",
+        },
+      },
+    };
+
+    const invalidParsed = UnitSchema.safeParse(invalidUnit);
+    expect(invalidParsed.success).toBe(false);
+  });
+
+  it("handles indirect circular references correctly", () => {
+    const spec: OpenAPISpec = {
+      components: {
+        schemas: {
+          Parent: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              children: {
+                type: "array",
+                items: { $ref: "#/components/schemas/Child" },
+              },
+            },
+            required: ["name"],
+          },
+          Child: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              parent: { $ref: "#/components/schemas/Parent" },
+            },
+            required: ["name"],
+          },
+        },
+      },
+    };
+
+    const zodSchemas = convertOpenAPISpecToZodSchemas(spec);
+    const ParentSchema = zodSchemas.map.Parent;
+    const ChildSchema = zodSchemas.map.Child;
+
+    const validParent = {
+      name: "parent-1",
+      children: [
+        {
+          name: "child-1",
+          parent: {
+            name: "parent-2",
+          },
+        },
+      ],
+    };
+
+    const parsedParent = ParentSchema.safeParse(validParent);
+    expect(parsedParent.success).toBe(true);
+
+    const validChild = {
+      name: "child-1",
+      parent: {
+        name: "parent-1",
+        children: [
+          {
+            name: "child-2",
+          },
+        ],
+      },
+    };
+
+    const parsedChild = ChildSchema.safeParse(validChild);
+    expect(parsedChild.success).toBe(true);
   });
 });

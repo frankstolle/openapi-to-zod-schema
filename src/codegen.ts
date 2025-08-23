@@ -1,7 +1,26 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable sonarjs/no-nested-template-literals */
 import { z } from "zod";
 import { OpenAPISpec, OpenAPIToZodConverter } from "./converter";
+
+interface ZodLazyDef {
+  getter: () => z.ZodTypeAny;
+}
+
+interface ZodUnionDef {
+  options: z.ZodTypeAny[];
+}
+
+interface ZodEnumDef {
+  values: string[];
+}
+
+interface ZodLiteralDef {
+  value: boolean | number | string;
+}
+
+interface ZodSchemaWithDef<T> {
+  _def: T;
+}
 
 const indent = (code: string, level = 1) => {
   const spaces = "  ".repeat(level);
@@ -53,7 +72,8 @@ class ZodSchemaCodeGenerator {
     } else if (schema instanceof z.ZodArray) {
       return `z.array(${this.generateSchemaCode(schema.element, `${schemaName}.element`)})`;
     } else if (schema instanceof z.ZodUnion) {
-      const options = (schema as any)._def.options;
+      const unionSchema = schema as ZodSchemaWithDef<ZodUnionDef>;
+      const options = unionSchema._def.options;
       return `z.union([${options
         .map((opt: z.ZodTypeAny, index: number) => this.generateSchemaCode(opt, `${schemaName}.union.${index}`))
         .join(", ")}])`;
@@ -64,30 +84,30 @@ class ZodSchemaCodeGenerator {
     } else if (schema instanceof z.ZodBoolean) {
       return "z.boolean()";
     } else if (schema instanceof z.ZodEnum) {
-      const values = (schema as any)._def.values;
+      const enumSchema = schema as ZodSchemaWithDef<ZodEnumDef>;
+      const values = enumSchema._def.values;
       if (values.length === 1) {
         return `z.literal("${values[0]}")`;
       }
       return `z.enum([${values.map((v: string) => `"${v}"`).join(", ")}])`;
     } else if (schema instanceof z.ZodLiteral) {
-      const value = (schema as any)._def.value;
+      const literalSchema = schema as ZodSchemaWithDef<ZodLiteralDef>;
+      const value = literalSchema._def.value;
       return `z.literal(${typeof value === "string" ? `"${value}"` : value})`;
     } else if (schema instanceof z.ZodNullable) {
       return `${this.generateSchemaCode(schema.unwrap(), schemaName)}.nullable()`;
     } else if (schema instanceof z.ZodOptional) {
       return `${this.generateSchemaCode(schema.unwrap(), schemaName)}.optional()`;
     } else if (schema instanceof z.ZodLazy) {
-      const originalSchemaName = Object.keys(this.schemas).find(
-        (key) => this.schemas[key] === (schema as any)._def.getter()
-      );
-      if (
-        originalSchemaName &&
-        this.generatedSchemas.has(originalSchemaName) &&
-        !this.currentlyGenerating.has(originalSchemaName)
-      ) {
-        return `${originalSchemaName}Schema`;
+      const referencedName = Object.entries(this.schemas).find(([, s]) => s === schema)?.[0];
+      if (referencedName) {
+        if (this.currentlyGenerating.has(referencedName)) {
+          return `z.lazy(() => ${this.prefix}${referencedName}Schema)`;
+        }
+        return `${this.prefix}${referencedName}Schema`;
       }
-      return this.generateSchemaCode((schema as any)._def.getter(), schemaName);
+      const lazySchema = schema as ZodSchemaWithDef<ZodLazyDef>;
+      return `z.lazy(() => ${this.generateSchemaCode(lazySchema._def.getter(), schemaName)})`;
     }
     return "z.unknown()";
   }
@@ -100,7 +120,13 @@ class ZodSchemaCodeGenerator {
           return "";
         }
         this.currentlyGenerating.add(name);
-        const schemaCode = this.generateSchemaCode(schema, name);
+        let schemaCode: string;
+        if (schema instanceof z.ZodLazy) {
+          const lazySchema = schema as ZodSchemaWithDef<ZodLazyDef>;
+          schemaCode = this.generateSchemaCode(lazySchema._def.getter(), name);
+        } else {
+          schemaCode = this.generateSchemaCode(schema, name);
+        }
         this.currentlyGenerating.delete(name);
         this.generatedSchemas.add(name);
         return `export const ${this.prefix}${name}Schema = ${schemaCode};`;
