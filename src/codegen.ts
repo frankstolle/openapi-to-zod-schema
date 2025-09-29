@@ -89,6 +89,10 @@ class ZodSchemaCodeGenerator {
             result += `.max(${check.value})`;
             break;
           }
+          case "date": {
+            result += `.date()`;
+            break;
+          }
           default:
             throw new Error(`unsupported check kind: ${check.kind}`);
         }

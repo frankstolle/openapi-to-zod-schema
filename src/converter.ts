@@ -21,6 +21,7 @@ interface OpenAPISchemaArray extends OpenAPISchemaBase {
 
 interface OpenAPISchemaString extends OpenAPISchemaBase {
   type: "string";
+  format?: "date";
   minLength?: number;
   maxLength?: number;
 }
@@ -170,6 +171,13 @@ class OpenAPIToZodConverter {
     }
     if (schema.maxLength !== undefined) {
       stringSchema = stringSchema.max(schema.maxLength);
+    }
+    if (schema.format !== undefined) {
+      switch (schema.format) {
+        case "date":
+          stringSchema = stringSchema.date();
+          break;
+      }
     }
     return schema.nullable ? stringSchema.nullable() : stringSchema;
   }

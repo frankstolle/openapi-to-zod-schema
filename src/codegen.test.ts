@@ -92,8 +92,12 @@ describe("codegen", () => {
                 minLength: 1,
                 maxLength: 5,
               },
+              dateprop: {
+                type: "string",
+                format: "date",
+              },
             },
-            required: ["prop"],
+            required: ["prop", "dateprop"],
           },
         },
       },
@@ -103,7 +107,8 @@ describe("codegen", () => {
       "import { z } from 'zod';
 
       export const SampleSchema = z.object({
-        prop: z.string().min(1).max(5)
+        prop: z.string().min(1).max(5),
+        dateprop: z.string().date()
       });"
     `);
   });
