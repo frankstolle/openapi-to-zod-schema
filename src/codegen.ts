@@ -104,6 +104,9 @@ class ZodSchemaCodeGenerator {
         if (this.currentlyGenerating.has(referencedName)) {
           return `z.lazy(() => ${this.prefix}${referencedName}Schema)`;
         }
+        if (!this.generatedSchemas.has(referencedName)) {
+          return `z.lazy(() => ${this.prefix}${referencedName}Schema)`;
+        }
         return `${this.prefix}${referencedName}Schema`;
       }
       const lazySchema = schema as ZodSchemaWithDef<ZodLazyDef>;
