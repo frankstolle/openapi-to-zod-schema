@@ -48,7 +48,7 @@ describe("codegen", () => {
     `);
   });
 
-  it("generates schema with refs and lazy not generated schemes", () => {
+  it("generates schema with refs in a sequence which prevents lazy usage", () => {
     const spec = {
       components: {
         schemas: {
@@ -79,18 +79,18 @@ describe("codegen", () => {
     expect(code).toMatchInlineSnapshot(`
       "import { z } from 'zod';
 
-      export const PostSchema = z.object({
-        id: z.number(),
-        title: z.string(),
-        content: z.string(),
-        author: z.lazy(() => UserSchema)
-      });
-
       export const UserSchema = z.object({
         id: z.number(),
         name: z.string().optional(),
         email: z.string(),
         roles: z.array(z.string()).optional()
+      });
+
+      export const PostSchema = z.object({
+        id: z.number(),
+        title: z.string(),
+        content: z.string(),
+        author: UserSchema
       });"
     `);
   });
