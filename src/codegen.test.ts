@@ -79,7 +79,6 @@ describe("codegen", () => {
       });"
     `);
   });
-
   it("generates schema with additional checks on string properties", () => {
     const spec = {
       components: {
@@ -110,6 +109,23 @@ describe("codegen", () => {
         prop: z.string().min(1).max(5),
         dateprop: z.string().date()
       });"
+    `);
+  });
+  it("generates schema with empty oneOf", () => {
+    const spec = {
+      components: {
+        schemas: {
+          Sample: {
+            oneOf: [],
+          },
+        },
+      },
+    };
+    const code = codegen(spec);
+    expect(code).toMatchInlineSnapshot(`
+      "import { z } from 'zod';
+
+      export const SampleSchema = z.never();"
     `);
   });
 });
